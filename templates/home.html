@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block title %}Home{% endblock %}
+
+{% block content %}
+<div class="hero">
+        <h1>Welcome to Opinion Mining for Comment Sentiment Analysis</h1>
+        <p>Discover amazing posts and connect with our community.</p>
+</div>
+
+<h2>Recent Posts</h2>
+
+{% for post in posts %}
+    <div class="post">
+        <h3>{{ post.title }}</h3>
+        <p>{{ post.description }}</p>
+        <p><small>Posted on {{ post.post_date }}</small></p>
+
+        <!-- Link to the post detail page where comments can be viewed and added -->
+        <a href="{% url 'post_detail' post_id=post.postid %}" class="view-comments">View Comments</a>
+    </div>
+{% endfor %}
+{% endblock %}
