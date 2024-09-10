@@ -45,25 +45,62 @@ def home(request):
     username = request.session.get('username')
     if not username:
         return redirect('login')
-    
+
+    # Fetch all posts
     posts = Post.objects.all()
+
+    # Calculate the average sentiment score for each post and classify it
+    post_with_sentiments = []
+    for post in posts:
+        comments = Comment.objects.filter(post=post)
+        if comments.exists():
+            avg_sentiment_score = sum(comment.sentiment_score for comment in comments if comment.sentiment_score is not None) / comments.count()
+        else:
+            avg_sentiment_score = 0  # Default score if no comments
+
+        # Classify sentiment
+        if avg_sentiment_score > 0.5:
+            sentiment_classification = 'Good'
+        elif avg_sentiment_score >= 0:
+            sentiment_classification = 'Neutral'
+        elif avg_sentiment_score > -0.5:
+            sentiment_classification = 'Bad'
+        else:
+            sentiment_classification = 'Worst'
+
+        post_with_sentiments.append({
+            'post': post,
+            'avg_sentiment_score': avg_sentiment_score,
+            'sentiment_classification': sentiment_classification,
+        })
+
+    # Sort posts by average sentiment score (highest first)
+    sorted_posts = sorted(post_with_sentiments, key=lambda x: x['avg_sentiment_score'], reverse=True)
+
     context = {
         'username': username,
-        'posts': posts,
+        'posts_with_sentiments': sorted_posts,
     }
     return render(request, 'home.html', context)
+
 
 def calculate_sentiment(comment_text):
     sentiment_score = 0.0
     sentiment_label = 'neutral'
+
+    
     words = comment_text.split()
 
     for word in words:
         synsets = wordnet.synsets(word)
         if not synsets:
             continue
+
+
         synset = synsets[0]
+
         swn_synset = sentiworddictionary.senti_synset(synset.name())
+        
         sentiment_score += swn_synset.pos_score() - swn_synset.neg_score()
 
     if sentiment_score > 0:
